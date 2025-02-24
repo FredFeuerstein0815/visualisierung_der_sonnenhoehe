@@ -141,15 +141,28 @@ def main():
         print("Sonnenhöhe {0}\nAzimuth {1}\n".format(sonnenhoehe, azimuth))
         cursor.close()
         db.close()
-    Layers(
-        [
-            Layer(load_image("pferd.png"), calculate_position=get_relative_position, extra_args=[(0.6, 0.8)]),
-            Layer(load_image("wiese_haus.png")),
-#            Layer(load_image("wolke.png"), calculate_position=get_cloud_position),
-            Layer(load_image("sonne.png"), calculate_position=get_sun_position),
-            Layer(load_image("blauer_himmel.png")),
-        ]
-    ).create_image(azimuth, sonnenhoehe, msg).save("/dev/shm/sonnenstand_zenit_azimuth_freiburg.png")
+    if sonnenhoehe < 2:
+        Layers(
+            [
+                Layer(load_image("pferd_nachts.png"), calculate_position=get_relative_position, extra_args=[(0.6, 0.8)]),
+                Layer(load_image("wiese_haus_dunkel.png")),
+#                Layer(load_image("wolke.png"), calculate_position=get_cloud_position),
+                Layer(load_image("sonne_25px.png"), calculate_position=get_sun_position),
+                Layer(load_image("sterne.png")),
+            ]
+        ).create_image(azimuth, sonnenhoehe, msg).save("/dev/shm/sonnenstand_zenit_azimuth_freiburg.png")
+
+    else:
+        Layers(
+            [
+                Layer(load_image("pferd.png"), calculate_position=get_relative_position, extra_args=[(0.6, 0.8)]),
+                Layer(load_image("wiese_haus_sonnig.png")),
+#                Layer(load_image("wolke.png"), calculate_position=get_cloud_position),
+                Layer(load_image("sonne_25px.png"), calculate_position=get_sun_position),
+                Layer(load_image("blauer_himmel.png")),
+            ]
+        ).create_image(azimuth, sonnenhoehe, msg).save("new.png")
+
 
 if __name__ == "__main__":
     main()
