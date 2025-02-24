@@ -155,7 +155,7 @@ def main():
     else:
         Layers(
             [
-                Layer(load_image("pferd.png"), calculate_position=get_relative_position, extra_args=[(0.6, 0.8)]),
+                Layer(load_image("pferd_tags.png"), calculate_position=get_relative_position, extra_args=[(0.6, 0.8)]),
                 Layer(load_image("wiese_haus_sonnig.png")),
 #                Layer(load_image("wolke.png"), calculate_position=get_cloud_position),
                 Layer(load_image("sonne_25px.png"), calculate_position=get_sun_position),
