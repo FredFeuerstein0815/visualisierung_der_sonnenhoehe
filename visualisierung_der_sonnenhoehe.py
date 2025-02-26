@@ -141,7 +141,7 @@ def main():
         print("Sonnenhöhe {0}\nAzimuth {1}\n".format(sonnenhoehe, azimuth))
         cursor.close()
         db.close()
-    if sonnenhoehe < 2:
+    if sonnenhoehe < 3:
         Layers(
             [
                 Layer(load_image("pferd_nachts.png"), calculate_position=get_relative_position, extra_args=[(0.6, 0.8)]),
