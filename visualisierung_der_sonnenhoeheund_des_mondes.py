@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf-8
 
 import datetime
 import logging
@@ -11,18 +12,20 @@ BACKGROUND_COLOR = (0, 0, 255)
 # Needs to be adjusted to get a nice view/perspective...
 #
 HEIGHT_OVER_HORIZON_MAX = 90
+
 HEIGHT_OVER_HORIZON_DEFAULT = 45
 AZIMUTH_DEFAULT = 180  # south
 
 TEXT_FONT = "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"
 TEXT_FONT_SIZE = 48
-TEXT_COLOR = "black"
+TEXT_COLOR = "grey"
 #
 # Distance from top of image in pixels:
 # Ascender line (top) of the first line of text, as defined by the font
 # (See https://pillow.readthedocs.io/en/latest/handbook/text-anchors.html)
 #
 TEXT_POS_H = 0
+
 
 class Layer:
     def __init__(self, image, calculate_position=None, extra_args=()):
@@ -108,6 +111,7 @@ def get_sun_position(image, width, height, azimuth, height_over_horizon):
         ),
     )
 
+
 def get_cloud_position(image, width, height, azimuth, height_over_horizon):
     # Note: azimuth and height_over_horizon are data from/for the sun!
     #
@@ -119,6 +123,7 @@ def get_cloud_position(image, width, height, azimuth, height_over_horizon):
 
     return get_sun_position(image, width, height, azimuth, height_over_horizon)
 
+
 def load_image(filename):
     try:
         return Image.open(filename).convert("RGBA")
@@ -129,9 +134,11 @@ def load_image(filename):
 def main():
     msg=str((datetime.datetime.now().strftime('%d-%m-%Y %H:%M')))
     print(msg)
-    db = mysql.connector.connect(user='user', password='password', host='127.0.0.1', database='database')
+#    sonnenhoehe=15
+#    azimuth=218
+    db = mysql.connector.connect(user='sonne', password='sonne', host='127.0.0.1', database='sonnenhoehe')
     cursor = db.cursor(prepared=True)
-    sql = "SELECT sonnenhoehe, azimuth FROM daten WHERE `datumzeit` >= NOW() - INTERVAL 12 DAY_HOUR ORDER BY `daten`.`datumzeit` DESC LIMIT 1;"
+    sql = "SELECT sonnenhoehe, azimuth FROM daten WHERE `datumzeit` >= NOW() - INTERVAL 14 DAY_HOUR ORDER BY `daten`.`datumzeit` DESC LIMIT 1;"
     cursor.execute(sql)
     eintraege = cursor.fetchall()
     print("\nLetzter Eintrag aus der Datenbank:")
@@ -141,28 +148,58 @@ def main():
         print("Sonnenhöhe {0}\nAzimuth {1}\n".format(sonnenhoehe, azimuth))
         cursor.close()
         db.close()
-    if sonnenhoehe < 3:
-        Layers(
-            [
-                Layer(load_image("pferd_nachts.png"), calculate_position=get_relative_position, extra_args=[(0.6, 0.8)]),
-                Layer(load_image("wiese_haus_dunkel.png")),
-#                Layer(load_image("wolke.png"), calculate_position=get_cloud_position),
-                Layer(load_image("sonne_25px.png"), calculate_position=get_sun_position),
-                Layer(load_image("sterne.png")),
-            ]
-        ).create_image(azimuth, sonnenhoehe, msg).save("/dev/shm/sonnenstand_zenit_azimuth_freiburg.png")
-
+    if sonnenhoehe < 2:
+        db = mysql.connector.connect(user='mond', password='mond', host='127.0.0.1', database='mond')
+        cursor = db.cursor(prepared=True)
+        sql = "SELECT mondhoehe, mondazimuth FROM daten WHERE `datumzeit` >= NOW() - INTERVAL 14 DAY_HOUR ORDER BY `daten`.`datumzeit` DESC LIMIT 1;"
+        cursor.execute(sql)
+        eintraege = cursor.fetchall()
+        print("\nLetzter Eintrag aus der Datenbank:")
+        for x in eintraege:
+            mondhoehe = x[0]
+            mondazimuth = x[1]
+            print("Mondhöhe {0}\nMondazimuth {1}\n".format(mondhoehe, mondazimuth))
+            cursor.close()
+            db.close()
+#            mondhoehe = 25
+#            mondazimuth = 180
+#            mondphase = str(5)
+            db = mysql.connector.connect(user='mondphase', password='mondphase', host='127.0.0.1', database='mondphase')
+            cursor = db.cursor(prepared=True)
+            sql = "SELECT mondphase FROM daten WHERE `datumzeit` >= NOW() - INTERVAL 14 DAY_HOUR ORDER BY `daten`.`datumzeit` DESC LIMIT 1;"
+            cursor.execute(sql)
+            eintraege = cursor.fetchall()
+            print("\nLetzter Eintrag aus der Datenbank:")
+            for x in eintraege:
+                mondphase = x[0]
+                print("Mondphase {0}\n".format(mondphase))
+                cursor.close()
+                db.close()
+#                mondhoehe = 25
+#                mondazimuth = 180
+#                mondphase = str(5)
+#                mondphase=str(mondphase)
+            Layers(
+                [
+                    Layer(load_image("/platte/Bilder/pferd_64x64_nachts.png"), calculate_position=get_relative_position, extra_args=[(0.5, 0.9)]),
+                    Layer(load_image("/platte/Bilder/wiese_haus_dunkel.png")),
+#                    Layer(load_image("/platte/Bilder/wolke.png"), calculate_position=get_cloud_position),
+                    Layer(load_image("/platte/Bilder/mondphasen/mond_"+ str(mondphase) +".png"), calculate_position=get_sun_position),
+                    Layer(load_image("/platte/Bilder/sterne.png")),
+                ]
+            ).create_image(mondazimuth, mondhoehe, msg).save("neu.png")
     else:
+
+        print("Tags")
         Layers(
             [
-                Layer(load_image("pferd_tags.png"), calculate_position=get_relative_position, extra_args=[(0.6, 0.8)]),
-                Layer(load_image("wiese_haus_sonnig.png")),
-#                Layer(load_image("wolke.png"), calculate_position=get_cloud_position),
-                Layer(load_image("sonne_25px.png"), calculate_position=get_sun_position),
-                Layer(load_image("blauer_himmel.png")),
+                Layer(load_image("/platte/Bilder/pferd_64x64_tags_nach_links.png"), calculate_position=get_relative_position, extra_args=[(0.5, 0.88)]),
+                Layer(load_image("/platte/Bilder/wiese_haus_sonnig.png")),
+#                Layer(load_image("/platte/Bilder/wolke.png"), calculate_position=get_cloud_position),
+                Layer(load_image("/platte/Bilder/sonne_25px.png"), calculate_position=get_sun_position),
+                Layer(load_image("/platte/Bilder/blauer_himmel.png")),
             ]
-        ).create_image(azimuth, sonnenhoehe, msg).save("new.png")
-
+        ).create_image(azimuth, sonnenhoehe, msg).save("neu.png")
 
 if __name__ == "__main__":
     main()
