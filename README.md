@@ -9,3 +9,4 @@ Mit einem Panoramabild, dessen Horizont mit z.B. GIMP transparent gemacht wurde,
 ![alt text](https://github.com/FredFeuerstein0815/visualisierung_der_sonnenhoehe/blob/main/sonnenstand.png)
 ![alt text](https://github.com/FredFeuerstein0815/visualisierung_der_sonnenhoehe/blob/main/transparent_tags.png)
 ![alt text](https://github.com/FredFeuerstein0815/visualisierung_der_sonnenhoehe/blob/main/transparent_nachts.png)
+![alt text](https://github.com/FredFeuerstein0815/visualisierung_der_sonnenhoehe/blob/main/dunkel_vollmond.png)
