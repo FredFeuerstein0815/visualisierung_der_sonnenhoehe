@@ -1,4 +1,4 @@
-Passend zu diesem Script:
+Passend zu diesen Scripten:
 
 https://github.com/FredFeuerstein0815/sonnenhoehe_zur_mariadb/tree/main
 
