@@ -8,7 +8,18 @@ Mit einem Panoramabild, dessen Horizont mit z.B. GIMP transparent gemacht wurde,
 
 Beispiele:
 
+Simpel:
+
 ![alt text](https://github.com/FredFeuerstein0815/visualisierung_der_sonnenhoehe/blob/main/sonnenstand.png)
+
+Transparentes Bild, für tagsüber:
+
 ![alt text](https://github.com/FredFeuerstein0815/visualisierung_der_sonnenhoehe/blob/main/transparent_tags.png)
+
+Transparentes Bild, für nachts, zunehmender Mond:
+
 ![alt text](https://github.com/FredFeuerstein0815/visualisierung_der_sonnenhoehe/blob/main/transparent_nachts.png)
+
+Transparentes Bild, für nachts, Vollmond:
+
 ![alt text](https://github.com/FredFeuerstein0815/visualisierung_der_sonnenhoehe/blob/main/dunkel_vollmond.png)
