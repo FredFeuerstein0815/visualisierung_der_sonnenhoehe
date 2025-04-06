@@ -66,9 +66,6 @@ def main():
     cursor.close()
     db.close()
 
-#    width, height = 540, 180
-#    width = 1024
-#    height = 650
     print("Breite: {0}".format(width))
     print("Höhe: {0}".format(height))
 
