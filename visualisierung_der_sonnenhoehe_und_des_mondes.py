@@ -79,6 +79,10 @@ def main():
     elif sonnenhoehe <=4:
         if mondphase >=8 and mondphase <=16:
             pferdbild_pfad = "wolf.png"
+            vordergrund_pfad = "wiese_haus.png"
+            hintergrund_pfad = "sterne.png"
+            sonnenbild_pfad = "1px_transparent.png"
+            mondbild_pfad = "/mondphasen_25x25/"+ str(mondphase) +".png"
         else:
             pferdbild_pfad = "pferd_mit_fackel.png"
             vordergrund_pfad = "wiese_haus.png"
