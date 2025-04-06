@@ -12,6 +12,10 @@ Simpel:
 
 ![alt text](https://github.com/FredFeuerstein0815/visualisierung_der_sonnenhoehe/blob/main/sonnenstand.png)
 
+Simpel Vollmond mit Wolf, welcher den Mond anheult:
+
+![alt text](https://github.com/FredFeuerstein0815/visualisierung_der_sonnenhoehe/blob/main/simpel_vollmond_wolf.png)
+
 Transparentes Bild, für tagsüber:
 
 ![alt text](https://github.com/FredFeuerstein0815/visualisierung_der_sonnenhoehe/blob/main/transparent_tags.png)
