@@ -1,205 +1,166 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import datetime
-import logging
 import mysql.connector
-from mysql.connector import errorcode
 from PIL import Image, ImageDraw, ImageFont
-
-BACKGROUND_COLOR = (0, 0, 255)
-#
-# Needs to be adjusted to get a nice view/perspective...
-#
-HEIGHT_OVER_HORIZON_MAX = 90
-
-HEIGHT_OVER_HORIZON_DEFAULT = 45
-AZIMUTH_DEFAULT = 180  # south
+import datetime
 
 TEXT_FONT = "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"
-TEXT_FONT_SIZE = 48
+TEXT_FONT_SIZE = 16
 TEXT_COLOR = "grey"
-#
-# Distance from top of image in pixels:
-# Ascender line (top) of the first line of text, as defined by the font
-# (See https://pillow.readthedocs.io/en/latest/handbook/text-anchors.html)
-#
 TEXT_POS_H = 0
+offset = 90
+max_hoehe = 90
+px_sonne = 25
+px_mond = 25
+px_horizont = 75
+width = 1024
+height = 650
 
-
-class Layer:
-    def __init__(self, image, calculate_position=None, extra_args=()):
-        self.image = image
-        self.calculate_position = calculate_position
-        self.extra_args = extra_args
-
-    @property
-    def width(self):
-        return self.image.width
-
-    @property
-    def height(self):
-        return self.image.height
-
-    def get_position(self, width, height, azimuth, height_over_horizon):
-        if self.calculate_position:
-            return self.calculate_position(
-                self.image,
-                width,
-                height,
-                azimuth,
-                height_over_horizon,
-                *self.extra_args
-            )
-        else:
-            return (0, 0)
-
-class Layers:
-    def __init__(self, items):
-        self.items = items
-
-    def __iter__(self):
-        return iter(self.items)
-
-    def __reversed__(self):
-        return reversed(self.items)
-
-    @property
-    def width(self):
-        return max(layer.width for layer in self)
-
-    @property
-    def height(self):
-        return max(layer.height for layer in self)
-
-    def create_image(self, azimuth, height_over_horizon, message=""):
-        width, height = self.width, self.height
-        image = Image.new("RGBA", (width, height), color=BACKGROUND_COLOR)
-        # Paste the layers from bottom to top
-        for layer in reversed(self):
-            image.paste(
-                layer.image,
-                layer.get_position(
-                    width, height, azimuth, height_over_horizon
-                ),
-                layer.image,
-            )
-
-        ImageDraw.Draw(image).text(
-            (width // 2, TEXT_POS_H),
-            message,
-            fill=TEXT_COLOR,
-            anchor="ma",
-            font=ImageFont.truetype(TEXT_FONT, TEXT_FONT_SIZE),
-        )
-        return image
-
-
-def get_relative_position(
-    _image, width, height, _azimuth, _height_over_horizon, relative_position
-):
-    x, y = relative_position
-    return (int(x * width), int(y * height))
-
-
-def get_sun_position(image, width, height, azimuth, height_over_horizon):
-    return (
-        int((width - image.width) * (azimuth - 90) / 180),
-        int(
-            (height - image.height)
-            * (1 - height_over_horizon / HEIGHT_OVER_HORIZON_MAX)
-        ),
-    )
-
-
-def get_cloud_position(image, width, height, azimuth, height_over_horizon):
-    # Note: azimuth and height_over_horizon are data from/for the sun!
-    #
-    # Just for testing/demo. Should be better some random position...
-    # Something like this to not cover the sun
-    azimuth = 360 - azimuth
-    if 160 < azimuth < 200:
-        azimuth = 160
-
-    return get_sun_position(image, width, height, azimuth, height_over_horizon)
-
-
-def load_image(filename):
-    try:
-        return Image.open(filename).convert("RGBA")
-    except FileNotFoundError:
-        logging.warning("Kein Bild %r gefunden !", filename)
-        return Image.new("RGBA", (0, 0))
 
 def main():
-    msg=str((datetime.datetime.now().strftime('%d-%m-%Y %H:%M')))
-    print(msg)
-#    sonnenhoehe=15
-#    azimuth=218
-    db = mysql.connector.connect(user='sonne', password='sonne', host='127.0.0.1', database='sonnenhoehe')
-    cursor = db.cursor(prepared=True)
-    sql = "SELECT sonnenhoehe, azimuth FROM daten WHERE `datumzeit` >= NOW() - INTERVAL 14 DAY_HOUR ORDER BY `daten`.`datumzeit` DESC LIMIT 1;"
-    cursor.execute(sql)
+    db = mysql.connector.connect(
+        host='127.0.0.1',
+        user='mondphase',
+        password='mondphase',
+        database='mondphase'
+    )
+    cursor = db.cursor()
+    cursor.execute("SELECT mondphase FROM daten WHERE `datumzeit` >= NOW() - INTERVAL 24 DAY_HOUR ORDER BY `daten`.`datumzeit` DESC LIMIT 1;")
     eintraege = cursor.fetchall()
-    print("\nLetzter Eintrag aus der Datenbank:")
+    for x in eintraege:
+        mondphase = x[0]
+    cursor.close()
+    db.close()
+    print("Mondphase {}".format(mondphase))
+
+    db = mysql.connector.connect(
+        host='127.0.0.1',
+        user='sonne',
+        password='sonne',
+        database='sonne'
+    )
+    cursor = db.cursor()
+    cursor.execute("SELECT sonnenhoehe, azimuth FROM daten WHERE `datumzeit` >= NOW() - INTERVAL 24 DAY_HOUR ORDER BY `daten`.`datumzeit` DESC LIMIT 1;")
+    eintraege = cursor.fetchall()
     for x in eintraege:
         sonnenhoehe = x[0]
         azimuth = x[1]
         print("Sonnenhöhe {0}\nAzimuth {1}\n".format(sonnenhoehe, azimuth))
-        cursor.close()
-        db.close()
-    if sonnenhoehe < 2:
-        db = mysql.connector.connect(user='mond', password='mond', host='127.0.0.1', database='mond')
-        cursor = db.cursor(prepared=True)
-        sql = "SELECT mondhoehe, mondazimuth FROM daten WHERE `datumzeit` >= NOW() - INTERVAL 14 DAY_HOUR ORDER BY `daten`.`datumzeit` DESC LIMIT 1;"
-        cursor.execute(sql)
-        eintraege = cursor.fetchall()
-        print("\nLetzter Eintrag aus der Datenbank:")
-        for x in eintraege:
-            mondhoehe = x[0]
-            mondazimuth = x[1]
-            print("Mondhöhe {0}\nMondazimuth {1}\n".format(mondhoehe, mondazimuth))
-            cursor.close()
-            db.close()
-#            mondhoehe = 25
-#            mondazimuth = 180
-#            mondphase = str(5)
-            db = mysql.connector.connect(user='mondphase', password='mondphase', host='127.0.0.1', database='mondphase')
-            cursor = db.cursor(prepared=True)
-            sql = "SELECT mondphase FROM daten WHERE `datumzeit` >= NOW() - INTERVAL 14 DAY_HOUR ORDER BY `daten`.`datumzeit` DESC LIMIT 1;"
-            cursor.execute(sql)
-            eintraege = cursor.fetchall()
-            print("\nLetzter Eintrag aus der Datenbank:")
-            for x in eintraege:
-                mondphase = x[0]
-                print("Mondphase {0}\n".format(mondphase))
-                cursor.close()
-                db.close()
-#                mondhoehe = 25
-#                mondazimuth = 180
-#                mondphase = str(5)
-#                mondphase=str(mondphase)
-            Layers(
-                [
-                    Layer(load_image("/platte/Bilder/pferd_64x64_nachts.png"), calculate_position=get_relative_position, extra_args=[(0.5, 0.9)]),
-                    Layer(load_image("/platte/Bilder/wiese_haus_dunkel.png")),
-#                    Layer(load_image("/platte/Bilder/wolke.png"), calculate_position=get_cloud_position),
-                    Layer(load_image("/platte/Bilder/mondphasen/mond_"+ str(mondphase) +".png"), calculate_position=get_sun_position),
-                    Layer(load_image("/platte/Bilder/sterne.png")),
-                ]
-            ).create_image(mondazimuth, mondhoehe, msg).save("neu.png")
-    else:
+    cursor.close()
+    db.close()
 
-        print("Tags")
-        Layers(
-            [
-                Layer(load_image("/platte/Bilder/pferd_64x64_tags_nach_links.png"), calculate_position=get_relative_position, extra_args=[(0.5, 0.88)]),
-                Layer(load_image("/platte/Bilder/wiese_haus_sonnig.png")),
-#                Layer(load_image("/platte/Bilder/wolke.png"), calculate_position=get_cloud_position),
-                Layer(load_image("/platte/Bilder/sonne_25px.png"), calculate_position=get_sun_position),
-                Layer(load_image("/platte/Bilder/blauer_himmel.png")),
-            ]
-        ).create_image(azimuth, sonnenhoehe, msg).save("neu.png")
+    db = mysql.connector.connect(
+        host='127.0.0.1',
+        user='mond',
+        password='mond',
+        database='mond'
+    )
+    cursor = db.cursor()
+    cursor.execute("SELECT mondhoehe, mondazimuth FROM daten WHERE `datumzeit` >= NOW() - INTERVAL 24 DAY_HOUR ORDER BY `daten`.`datumzeit` DESC LIMIT 1;")
+    eintraege = cursor.fetchall()
+    for x in eintraege:
+        mondhoehe = x[0]
+        mondazimuth = x[1]
+        print("Mondhöhe {0}\nMondazimuth {1}\n".format(mondhoehe, mondazimuth))
+    cursor.close()
+    db.close()
+
+#    width, height = 540, 180
+#    width = 1024
+#    height = 650
+    print("Breite: {0}".format(width))
+    print("Höhe: {0}".format(height))
+
+    if sonnenhoehe >= 4:
+        print("Bilder für Tags")
+        pferdbild_pfad = "pferd_tags.png"
+        vordergrund_pfad = "wiese_haus.png"
+        hintergrund_pfad = "blauer_himmel.png"
+        sonnenbild_pfad = "sonne.png"
+        mondbild_pfad = "/mondphasen_25x25/"+ str(mondphase) +".png"
+    elif sonnenhoehe <=4:
+        if mondphase >=8 and mondphase <=16:
+            pferdbild_pfad = "wolf.png"
+        else:
+            pferdbild_pfad = "pferd_mit_fackel.png"
+            vordergrund_pfad = "wiese_haus.png"
+            hintergrund_pfad = "sterne.png"
+            sonnenbild_pfad = "1px_transparent.png"
+            mondbild_pfad = "/mondphasen_25x25/"+ str(mondphase) +".png"
+    else:
+        print("Fehler")
+    hintergrund = Image.open(hintergrund_pfad).resize((width, height))
+    vordergrund = Image.open(vordergrund_pfad).resize((width, height))
+    sonnenbild = Image.open(sonnenbild_pfad).convert("RGBA")
+    mondbild = Image.open(mondbild_pfad).convert("RGBA")
+    pferdbild = Image.open(pferdbild_pfad).convert("RGBA")
+
+    if sonnenhoehe >= 4 and mondhoehe >= 4 and mondazimuth >= 90 and mondazimuth <= 270:
+        print("Sonne und Mond über dem Horizont und Mondazimut zw. 90 und 270")
+        sonne_x = int(((azimuth - offset)*(width/180))+(px_sonne))
+        sonne_y = int((sonnenhoehe*(height/max_hoehe) - height)*-1)
+        mond_x = int(((mondazimuth - offset)*(width/180))+(px_mond))
+        mond_y = int((mondhoehe*(height/max_hoehe) - height)*-1)
+    else:
+        print("Sonne oder Mond unter dem Horizont")
+        if mondhoehe <= 4:
+            print("Mond unter dem Horizont: {}".format(mondhoehe))
+            mond_x = 1
+            mond_y = 1
+            if sonnenhoehe >= 4:
+                sonne_x = int(((azimuth - offset)*(width/180))+(px_sonne))
+                sonne_y = int((sonnenhoehe*(height/max_hoehe) - height)*-1)
+            else:
+                sonne_x = 1
+                sonne_y = 1
+        elif mondhoehe >= 4:
+            print("Mond über 4: {}".format(mondhoehe))
+            mond_y = int(((mondhoehe*(height/max_hoehe) - height)*-1)+(px_mond))
+            if mondazimuth >= 90 and mondazimuth <= 270:
+                mond_x = int(((mondazimuth - offset)*(width/180))+(px_mond))
+                sonne_x = 1
+                sonne_y = 1
+            elif mondazimuth <= 90 or mondazimuth >= 270:
+                print("Mond vor Osten oder über Westen hinaus: {}".format(mondazimuth))
+                mond_x = 1
+                mond_y = 1
+                if sonnenhoehe >= 4:
+                    print("aber Sonnenhoehe über 4 : {}".format(sonnenhoehe))
+                    sonne_x = int(((azimuth - offset)*(width/180))+(px_sonne))
+                    sonne_y = int((sonnenhoehe*(height/max_hoehe) - height)*-1)
+                else:
+                    print("aber Sonnenhoehe unter 4 : {}".format(sonnenhoehe))
+                    sonne_x = 1
+                    sonne_y = 1
+        else:
+            print("Fehler")
+            mond_x = 1
+            mond_y = 1
+    print("Mond_x {}".format(mond_x))
+    print("Mond_y {}".format(mond_y))
+    print("Sonne_x {}".format(sonne_x))
+    print("Sonne_y {}".format(sonne_y))
+
+    neues_bild = Image.new("RGBA", (width, height))
+    neues_bild.paste(hintergrund, (0, 0))
+    if sonne_x == 1 and sonne_y == 1:
+        sonnenbild = Image.open("1px_transparent.png").convert("RGBA")
+    else:
+        neues_bild.paste(sonnenbild, (int(sonne_x), int(sonne_y)), sonnenbild)
+    if mond_x == 1 and mond_y == 1:
+        mondbild = Image.open("1px_transparent.png").convert("RGBA")
+    else:
+        neues_bild.paste(mondbild, (int(mond_x), int(mond_y)), mondbild)
+    neues_bild.paste(vordergrund, (0, 0), vordergrund)
+    neues_bild.paste(pferdbild, (width-450, height-120), pferdbild)
+    zeichne = ImageDraw.Draw(neues_bild)
+    datumzeit = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(datumzeit)
+    font = ImageFont.truetype(TEXT_FONT, TEXT_FONT_SIZE)
+    zeichne.text((50, 0), datumzeit, fill="grey", font=font)
+
+    neues_bild.save("neu.png")
 
 if __name__ == "__main__":
     main()
